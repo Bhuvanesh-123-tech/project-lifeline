@@ -21,6 +21,7 @@
             height: 80px;
             font-size: 30px;
             margin: 5px;
+            cursor: pointer;
         }
 
         .info {
@@ -43,8 +44,7 @@
     <h1>🚑 RESCUE BOT</h1>
 
     <div class="camera">
-        <br><br><br><br><br><br>
-        📹 CAMERA FEED
+        📹 CAMERA FEED (not active yet)
     </div>
 
     <div class="info">🌡 Temperature: --</div>
@@ -53,17 +53,28 @@
 
     <br>
 
-    <button>↑</button>
+    <button onclick="sendCmd('forward')">↑</button>
 
     <br>
 
-    <button>←</button>
-    <button>📦</button>
-    <button>→</button>
+    <button onclick="sendCmd('left')">←</button>
+    <button onclick="sendCmd('open')">📦</button>
+    <button onclick="sendCmd('right')">→</button>
 
     <br>
 
-    <button>↓</button>
+    <button onclick="sendCmd('backward')">↓</button>
+
+    <script>
+        const ESP = "http://ESP_IP";
+
+        function sendCmd(cmd) {
+            fetch(`${ESP}/${cmd}`)
+                .then(res => res.text())
+                .then(data => console.log(data))
+                .catch(err => console.log("ESP32 not reachable"));
+        }
+    </script>
 
 </body>
 
