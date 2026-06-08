@@ -24,11 +24,6 @@
             cursor: pointer;
         }
 
-        .info {
-            font-size: 20px;
-            margin: 10px;
-        }
-
         .camera {
             width: 500px;
             height: 300px;
@@ -44,12 +39,10 @@
     <h1>🚑 RESCUE BOT</h1>
 
     <div class="camera">
-        📹 CAMERA FEED (not active yet)
+        📹 CAMERA FEED (offline)
     </div>
 
-    <div class="info">🌡 Temperature: --</div>
-    <div class="info">🌬 Air Quality: --</div>
-    <div class="info">⚠ Gas Status: --</div>
+    <div id="status">🔴 Checking ESP32...</div>
 
     <br>
 
@@ -66,14 +59,55 @@
     <button onclick="sendCmd('backward')">↓</button>
 
     <script>
-        const ESP = "http://ESP_IP";
+        const ESP = "http://192.168.1.25"; // 🔧 CHANGE THIS TO YOUR ESP IP
+
+        let espOnline = false;
+
+        async function checkESP() {
+            try {
+                let res = await fetch(`${ESP}/status`);
+                let text = await res.text();
+
+                if (text.includes("ONLINE")) {
+                    espOnline = true;
+                    document.getElementById("status").innerText = "🟢 ESP32 CONNECTED";
+                    enableButtons();
+                }
+            } catch {
+                espOnline = false;
+                document.getElementById("status").innerText = "🔴 ESP32 OFFLINE";
+                disableButtons();
+            }
+        }
 
         function sendCmd(cmd) {
+            if (!espOnline) {
+                alert("ESP32 not connected!");
+                return;
+            }
+
             fetch(`${ESP}/${cmd}`)
                 .then(res => res.text())
-                .then(data => console.log(data))
-                .catch(err => console.log("ESP32 not reachable"));
+                .then(data => console.log("ESP:", data))
+                .catch(err => console.log(err));
         }
+
+        function disableButtons() {
+            document.querySelectorAll("button").forEach(b => {
+                b.disabled = true;
+                b.style.opacity = 0.4;
+            });
+        }
+
+        function enableButtons() {
+            document.querySelectorAll("button").forEach(b => {
+                b.disabled = false;
+                b.style.opacity = 1;
+            });
+        }
+
+        setInterval(checkESP, 3000);
+        checkESP();
     </script>
 
 </body>
