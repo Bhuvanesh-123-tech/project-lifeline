@@ -21,95 +21,79 @@
             height: 80px;
             font-size: 30px;
             margin: 5px;
-            cursor: pointer;
         }
 
-        .camera {
-            width: 500px;
-            height: 300px;
-            border: 3px solid white;
-            margin: auto;
-            margin-bottom: 20px;
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            z-index: 999;
         }
     </style>
 </head>
 
 <body>
 
-    <h1>🚑 RESCUE BOT</h1>
+<div id="overlay">🔴 Checking ESP32 connection...</div>
 
-    <div class="camera">
-        📹 CAMERA FEED (offline)
-    </div>
+<h1>🚑 RESCUE BOT</h1>
 
-    <div id="status">🔴 Checking ESP32...</div>
+<button onclick="sendCmd('forward')">↑</button><br>
 
-    <br>
+<button onclick="sendCmd('left')">←</button>
+<button onclick="sendCmd('open')">📦</button>
+<button onclick="sendCmd('right')">→</button><br>
 
-    <button onclick="sendCmd('forward')">↑</button>
+<button onclick="sendCmd('backward')">↓</button>
 
-    <br>
+<script>
+    const ESP = "http://192.168.1.25"; // change this
 
-    <button onclick="sendCmd('left')">←</button>
-    <button onclick="sendCmd('open')">📦</button>
-    <button onclick="sendCmd('right')">→</button>
+    let locked = true;
 
-    <br>
+    async function checkESP() {
+        try {
+            let res = await fetch(`${ESP}/status`);
+            let text = await res.text();
 
-    <button onclick="sendCmd('backward')">↓</button>
-
-    <script>
-        const ESP = "http://192.168.1.25"; // 🔧 CHANGE THIS TO YOUR ESP IP
-
-        let espOnline = false;
-
-        async function checkESP() {
-            try {
-                let res = await fetch(`${ESP}/status`);
-                let text = await res.text();
-
-                if (text.includes("ONLINE")) {
-                    espOnline = true;
-                    document.getElementById("status").innerText = "🟢 ESP32 CONNECTED";
-                    enableButtons();
-                }
-            } catch {
-                espOnline = false;
-                document.getElementById("status").innerText = "🔴 ESP32 OFFLINE";
-                disableButtons();
+            if (text.includes("ONLINE")) {
+                locked = false;
+                document.getElementById("overlay").style.display = "none";
+                enableButtons();
             }
+        } catch {
+            locked = true;
+            document.getElementById("overlay").style.display = "flex";
+            disableButtons();
         }
+    }
 
-        function sendCmd(cmd) {
-            if (!espOnline) {
-                alert("ESP32 not connected!");
-                return;
-            }
+    function sendCmd(cmd) {
+        if (locked) return;
 
-            fetch(`${ESP}/${cmd}`)
-                .then(res => res.text())
-                .then(data => console.log("ESP:", data))
-                .catch(err => console.log(err));
-        }
+        fetch(`${ESP}/${cmd}`)
+            .then(res => res.text())
+            .then(data => console.log(data));
+    }
 
-        function disableButtons() {
-            document.querySelectorAll("button").forEach(b => {
-                b.disabled = true;
-                b.style.opacity = 0.4;
-            });
-        }
+    function disableButtons() {
+        document.querySelectorAll("button").forEach(b => b.disabled = true);
+    }
 
-        function enableButtons() {
-            document.querySelectorAll("button").forEach(b => {
-                b.disabled = false;
-                b.style.opacity = 1;
-            });
-        }
+    function enableButtons() {
+        document.querySelectorAll("button").forEach(b => b.disabled = false);
+    }
 
-        setInterval(checkESP, 3000);
-        checkESP();
-    </script>
+    setInterval(checkESP, 3000);
+    checkESP();
+</script>
 
 </body>
-
 </html>
